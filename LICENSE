@@ -1,0 +1,44 @@
+# Poly Studio - Evaluation Lab
+
+Copyright (c) VAapps
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+THIRD-PARTY SAMPLE DATA
+
+This repository redistributes third-party sample databases. They remain under
+their own licences and are not covered by the licence above:
+
+  Chinook  - https://github.com/lerocha/chinook-database
+             MIT License. Copyright (c) Chinook Database ( originally
+             developed by Michael Lidgard / "chinookdatabase.com" ).
+
+  Sakila   - https://github.com/sakiladb/mysql and
+             https://github.com/sakiladb/postgres
+             Originally created by MySQL AB and released under the
+             BSD 2-Clause License. Copyright (c) 2006, 2019 Oracle and/or
+             its affiliates.
+
+The patched copies under packs/ differ from the upstream releases only in
+that statements which cannot execute inside a Docker container have been
+removed (CREATE DATABASE / DROP DATABASE / psql "\c" / the SQL Server
+"drop if exists" block) and line endings normalised to LF. The dataset
+content is otherwise unmodified.

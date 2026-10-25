@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "name": "Poly Studio Evaluation Lab (SQLite only)",
+  "requiresDocker": false,
+
+  "sqlitePack": {
+    "label": "Sample SQLite (Chinook)",
+    "source": "packs/chinook-sqlite/Chinook_Sqlite.sqlite"
+  },
+
+  "queryLab": {
+    "page": {
+      "name": "Evaluation Lab (SQLite)",
+      "description": "Chinook sample data (bundled SQLite file - no Docker required)."
+    },
+    "cards": [
+      {
+        "title": "Top 10 artists by track count",
+        "connectorLabel": "Sample SQLite (Chinook)",
+        "chartType": "bar",
+        "sql": "SELECT ar.Name AS \"Artist\", COUNT(t.TrackId) AS \"Tracks\" FROM Artist ar JOIN Album al ON al.ArtistId = ar.ArtistId JOIN Track t ON t.AlbumId = al.AlbumId GROUP BY ar.ArtistId, ar.Name ORDER BY \"Tracks\" DESC LIMIT 10"
+      },
+      {
+        "title": "Tracks by genre",
+        "connectorLabel": "Sample SQLite (Chinook)",
+        "chartType": "doughnut",
+        "sql": "SELECT g.Name AS \"Genre\", COUNT(t.TrackId) AS \"Tracks\" FROM Genre g JOIN Track t ON t.GenreId = g.GenreId GROUP BY g.GenreId, g.Name ORDER BY \"Tracks\" DESC"
+      },
+      {
+        "title": "Top 10 albums by track count",
+        "connectorLabel": "Sample SQLite (Chinook)",
+        "chartType": "bar",
+        "sql": "SELECT al.Title AS \"Album\", COUNT(t.TrackId) AS \"Tracks\" FROM Album al JOIN Track t ON t.AlbumId = al.AlbumId GROUP BY al.AlbumId, al.Title ORDER BY \"Tracks\" DESC LIMIT 10"
+      }
+    ]
+  }
+}

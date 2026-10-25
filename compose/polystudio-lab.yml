@@ -1,0 +1,217 @@
+# =============================================================================
+#  Poly Studio - Evaluation Lab
+#  A self-contained stack of sample databases + an SSH sidecar that Poly Studio
+#  connects to through a real SSH tunnel (exactly like a production host).
+#
+#  Usage:
+#     git clone https://github.com/VAapps/polystudio-samples.git
+#     cd polystudio-samples
+#     docker compose -f compose/polystudio-lab.yml up -d
+#
+#  Then, in Poly Studio:  Connectors -> Import Lab Pack (pick this folder).
+#
+#  Nothing here is published to your host except the SSH port on 127.0.0.1.
+#  The databases are reachable ONLY through the SSH tunnel, which is how
+#  Poly Studio is designed to reach a private network.
+# =============================================================================
+name: polystudio-lab
+
+services:
+
+  # ---------------------------------------------------------------------------
+  #  lab-ssh - SSH sidecar.
+  #
+  #  This is the "remote host" Poly Studio talks to. It runs a real sshd and it
+  #  has the Docker socket mounted, so the Docker Studio module sees the REAL
+  #  containers of this lab (not a simulation).
+  #
+  #  Because lab-ssh shares the `lab` network with the database containers,
+  #  Poly Studio's SSH tunnel can reach the databases by their compose service
+  #  name (postgres, mysql, sqlserver). That is the whole point: every query
+  #  travels over the tunnel.
+  # ---------------------------------------------------------------------------
+  lab-ssh:
+    image: docker:cli
+    container_name: poly-lab-ssh
+    hostname: poly-lab-ssh
+    ports:
+      # Bound to loopback only - never exposed to the LAN.
+      - "127.0.0.1:2222:22"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - lab
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        apk add --no-cache openssh >/dev/null
+        ssh-keygen -A >/dev/null
+        # CRITICAL: Alpine's openssh package ships "AllowTcpForwarding no" in
+        # /etc/ssh/sshd_config. PolyStudio's SSH tunnel is a TCP port
+        # forward, so without this the tunnel opens but every forwarded
+        # connection is silently dropped. This directive is the whole point
+        # of the sidecar.
+        printf '%s\n' \
+          'PermitRootLogin yes' \
+          'PasswordAuthentication yes' \
+          'AllowTcpForwarding yes' \
+          'GatewayPorts no' \
+          'X11Forwarding no' \
+          > /etc/ssh/sshd_config
+        echo 'root:PolyDemo123!' | chpasswd
+        echo "lab-ssh ready (root / PolyDemo123!) - TCP forwarding enabled"
+        exec /usr/sbin/sshd -D
+
+  # ---------------------------------------------------------------------------
+  #  postgres - Chinook (digital media store) on PostgreSQL 16.
+  #  12 tables, 24 bulk INSERT statements, ~15k rows.
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16
+    container_name: poly-lab-postgres
+    environment:
+      POSTGRES_USER: poly
+      POSTGRES_PASSWORD: poly
+      POSTGRES_DB: chinook
+    volumes:
+      - ../packs/chinook-postgres/Chinook_PostgreSql.sql:/docker-entrypoint-initdb.d/10-chinook.sql:ro
+    networks:
+      - lab
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U poly -d chinook"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # ---------------------------------------------------------------------------
+  #  postgres-sakila - Sakila (film rental) on PostgreSQL 16.
+  #  22 tables (payment is partitioned by month), ~160k rows.
+  #
+  #  The superuser is deliberately "poly", NOT "postgres": the Sakila dump
+  #  ends with "REASSIGN OWNED BY postgres TO sakila", and that fails when
+  #  "postgres" is the bootstrap superuser because it then owns the system
+  #  catalogs ("required by the database system"). 00-roles.sql creates
+  #  "postgres" as an ordinary role that owns only the Sakila objects.
+  # ---------------------------------------------------------------------------
+  postgres-sakila:
+    image: postgres:16
+    container_name: poly-lab-postgres-sakila
+    environment:
+      POSTGRES_USER: poly
+      POSTGRES_PASSWORD: poly
+      POSTGRES_DB: sakila
+    volumes:
+      - ../packs/sakila-postgres/00-roles.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
+      - ../packs/sakila-postgres/1-postgres-sakila-schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+      - ../packs/sakila-postgres/2-postgres-sakila-insert-data.sql:/docker-entrypoint-initdb.d/20-data.sql:ro
+      - ../packs/sakila-postgres/3-postgres-sakila-user.sql:/docker-entrypoint-initdb.d/30-user.sql:ro
+    networks:
+      - lab
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U poly -d sakila"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # ---------------------------------------------------------------------------
+  #  mysql - Sakila (film rental) on MySQL 8.
+  #  16 tables + views + stored procedures + functions + triggers, ~600k rows.
+  # ---------------------------------------------------------------------------
+  mysql:
+    image: mysql:8
+    container_name: poly-lab-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: poly
+      MYSQL_DATABASE: sakila
+    volumes:
+      - ../packs/sakila-mysql/1-sakila-schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+      - ../packs/sakila-mysql/2-sakila-data.sql:/docker-entrypoint-initdb.d/20-data.sql:ro
+    networks:
+      - lab
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-ppoly"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # ---------------------------------------------------------------------------
+  #  mariadb - Sakila (film rental) on MariaDB 11.
+  #  Same dataset, different engine - ideal for the Schema Compare demo.
+  # ---------------------------------------------------------------------------
+  mariadb:
+    image: mariadb:11
+    container_name: poly-lab-mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: poly
+      MARIADB_DATABASE: sakila
+    volumes:
+      - ../packs/sakila-mysql/1-sakila-schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+      - ../packs/sakila-mysql/2-sakila-data.sql:/docker-entrypoint-initdb.d/20-data.sql:ro
+    networks:
+      - lab
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # ---------------------------------------------------------------------------
+  #  sqlserver - Chinook on SQL Server 2022.
+  #
+  #  The official Microsoft image has NO /docker-entrypoint-initdb.d support,
+  #  so the sample data is loaded by a one-shot `sqlcmd` job (see below) that
+  #  waits for the server to accept connections first.
+  # ---------------------------------------------------------------------------
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: poly-lab-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "PolyDemo123!"
+      MSSQL_PID: Developer
+    networks:
+      - lab
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  #  sqlserver-init - one-shot job that loads the Chinook script.
+  #  Runs to completion and exits; `docker compose up -d` returns immediately.
+  # ---------------------------------------------------------------------------
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: poly-lab-sqlserver-init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "PolyDemo123!"
+    volumes:
+      - ../packs/chinook-sqlserver/Chinook_SqlServer.sql:/data/Chinook_SqlServer.sql:ro
+    networks:
+      - lab
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        # NOTE: '$$' escapes the variable for docker compose so it is not
+        # interpolated on the host - the shell inside the container sees '$'.
+        SQLCMD=/opt/mssql-tools18/bin/sqlcmd
+        if [ ! -x "$$SQLCMD" ]; then SQLCMD=/opt/mssql-tools/bin/sqlcmd; fi
+        echo "[init] loading Chinook into SQL Server..."
+        # -b makes sqlcmd exit non-zero on error so a failed load is visible.
+        "$$SQLCMD" -S sqlserver -U sa -P "PolyDemo123!" -C -b -i /data/Chinook_SqlServer.sql
+        echo "[init] Chinook loaded."
+
+networks:
+  lab:
+    name: polystudio-lab
+    driver: bridge

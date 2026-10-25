@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "name": "Poly Studio Evaluation Lab",
+  "requiresDocker": true,
+
+  "tunnel": {
+    "label": "Lab SSH (poly-lab-ssh)",
+    "host": "127.0.0.1",
+    "port": 2222,
+    "username": "root",
+    "password": "PolyDemo123!"
+  },
+
+  "connectors": [
+    { "label": "Lab PostgreSQL (Chinook)",     "kind": "postgres",  "host": "postgres",         "port": 5432, "database": "chinook", "username": "poly", "password": "poly",          "allowWrites": true },
+    { "label": "Lab PostgreSQL (Sakila)",      "kind": "postgres",  "host": "postgres-sakila",  "port": 5432, "database": "sakila",  "username": "poly", "password": "poly",          "allowWrites": true },
+    { "label": "Lab MySQL (Sakila)",           "kind": "mysql",     "host": "mysql",            "port": 3306, "database": "sakila",  "username": "root", "password": "poly",          "allowWrites": true },
+    { "label": "Lab MariaDB (Sakila)",         "kind": "mariadb",   "host": "mariadb",          "port": 3306, "database": "sakila",  "username": "root", "password": "poly",          "allowWrites": true },
+    { "label": "Lab SQL Server (Chinook)",     "kind": "sqlserver", "host": "sqlserver",        "port": 1433, "database": "Chinook", "username": "sa",   "password": "PolyDemo123!",  "allowWrites": true, "x64Only": true }
+  ],
+
+  "sqlitePack": {
+    "label": "Sample SQLite (Chinook)",
+    "source": "packs/chinook-sqlite/Chinook_Sqlite.sqlite"
+  },
+
+  "queryLab": {
+    "page": {
+      "name": "Evaluation Lab",
+      "description": "Sample data from the Poly Studio evaluation lab - Chinook (media store) and Sakila (film rental)."
+    },
+    "cards": [
+      {
+        "title": "Top 10 artists by track count",
+        "connectorLabel": "Lab PostgreSQL (Chinook)",
+        "chartType": "bar",
+        "sql": "SELECT ar.name AS \"Artist\", COUNT(t.track_id) AS \"Tracks\" FROM artist ar JOIN album al ON al.artist_id = ar.artist_id JOIN track t ON t.album_id = al.album_id GROUP BY ar.artist_id, ar.name ORDER BY \"Tracks\" DESC LIMIT 10"
+      },
+      {
+        "title": "Tracks by genre",
+        "connectorLabel": "Lab PostgreSQL (Chinook)",
+        "chartType": "doughnut",
+        "sql": "SELECT g.name AS \"Genre\", COUNT(t.track_id) AS \"Tracks\" FROM genre g JOIN track t ON t.genre_id = g.genre_id GROUP BY g.genre_id, g.name ORDER BY \"Tracks\" DESC"
+      },
+      {
+        "title": "Revenue by month (Sakila, MySQL)",
+        "connectorLabel": "Lab MySQL (Sakila)",
+        "chartType": "line",
+        "sql": "SELECT DATE_FORMAT(p.payment_date, '%Y-%m') AS `Month`, SUM(p.amount) AS `Revenue` FROM payment p GROUP BY DATE_FORMAT(p.payment_date, '%Y-%m') ORDER BY `Month`"
+      },
+      {
+        "title": "Top 10 films by rental count (Sakila, MariaDB)",
+        "connectorLabel": "Lab MariaDB (Sakila)",
+        "chartType": "bar",
+        "sql": "SELECT f.title AS `Film`, COUNT(r.rental_id) AS `Rentals` FROM rental r JOIN inventory i ON i.inventory_id = r.inventory_id JOIN film f ON f.film_id = i.film_id GROUP BY f.film_id, f.title ORDER BY `Rentals` DESC LIMIT 10"
+      },
+      {
+        "title": "Customers by country (Sakila, PostgreSQL)",
+        "connectorLabel": "Lab PostgreSQL (Sakila)",
+        "chartType": "bar",
+        "sql": "SELECT co.country AS \"Country\", COUNT(c.customer_id) AS \"Customers\" FROM customer c JOIN address a ON a.address_id = c.address_id JOIN city ci ON ci.city_id = a.city_id JOIN country co ON co.country_id = ci.country_id GROUP BY co.country_id, co.country ORDER BY \"Customers\" DESC"
+      },
+      {
+        "title": "Albums per artist (Chinook, SQL Server)",
+        "connectorLabel": "Lab SQL Server (Chinook)",
+        "chartType": "bar",
+        "sql": "SELECT TOP 10 ar.Name AS \"Artist\", COUNT(al.AlbumId) AS \"Albums\" FROM Artist ar JOIN Album al ON al.ArtistId = ar.ArtistId GROUP BY ar.ArtistId, ar.Name ORDER BY \"Albums\" DESC"
+      }
+    ]
+  }
+}

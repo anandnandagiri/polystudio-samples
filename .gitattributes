@@ -1,0 +1,8 @@
+# Line endings
+#   LF everywhere (including Windows checkouts). The Docker initdb scripts
+#   assume LF; the packs in this repo are normalised to LF and the repo keeps
+#   that invariant regardless of the client OS.
+* text=auto eol=lf
+
+# Binary assets
+*.sqlite binary
