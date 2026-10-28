@@ -4,7 +4,7 @@
 #  connects to through a real SSH tunnel (exactly like a production host).
 #
 #  Usage:
-#     git clone https://github.com/VAapps/polystudio-samples.git
+#     git clone https://github.com/anandnandagiri/polystudio-samples.git
 #     cd polystudio-samples
 #     docker compose -f compose/polystudio-lab.yml up -d
 #
@@ -71,6 +71,10 @@ services:
   postgres:
     image: postgres:16
     container_name: poly-lab-postgres
+    # Modest memory settings so the whole lab fits on a small machine (a
+    # Raspberry Pi running 4 databases at once is tight). The defaults
+    # (128 MB shared buffers, 100 connections each) add up quickly.
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=50"]
     environment:
       POSTGRES_USER: poly
       POSTGRES_PASSWORD: poly
@@ -80,7 +84,13 @@ services:
     networks:
       - lab
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U poly -d chinook"]
+      # -h 127.0.0.1 is essential: pg_isready uses the unix socket by default,
+      # and during the init phase the image runs a temporary server that listens
+      # ONLY on that socket while it loads the seed scripts. A socket check
+      # therefore reports "healthy" while the database is still loading, and a
+      # client that reaches the container over TCP (which is what the SSH
+      # tunnel does) gets its connection closed. The TCP check tells the truth.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U poly -d chinook"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -98,6 +108,9 @@ services:
   postgres-sakila:
     image: postgres:16
     container_name: poly-lab-postgres-sakila
+    # See the note on the "postgres" service - the Sakila dataset is by far
+    # the largest in the lab, so it needs the smaller footprint most.
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=50"]
     environment:
       POSTGRES_USER: poly
       POSTGRES_PASSWORD: poly
@@ -110,7 +123,9 @@ services:
     networks:
       - lab
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U poly -d sakila"]
+      # -h 127.0.0.1, see the note on the "postgres" service: the socket
+      # check would report ready while the Sakila seed is still running.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U poly -d sakila"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -122,6 +137,9 @@ services:
   mysql:
     image: mysql:8
     container_name: poly-lab-mysql
+    # A small InnoDB buffer pool keeps the MySQL and MariaDB Sakila instances
+    # (about 600k rows each) inside a small machine's memory budget.
+    command: --innodb-buffer-pool-size=64M
     environment:
       MYSQL_ROOT_PASSWORD: poly
       MYSQL_DATABASE: sakila
@@ -143,6 +161,8 @@ services:
   mariadb:
     image: mariadb:11
     container_name: poly-lab-mariadb
+    # See the note on the "mysql" service.
+    command: --innodb-buffer-pool-size=64M
     environment:
       MARIADB_ROOT_PASSWORD: poly
       MARIADB_DATABASE: sakila
@@ -163,10 +183,22 @@ services:
   #  The official Microsoft image has NO /docker-entrypoint-initdb.d support,
   #  so the sample data is loaded by a one-shot `sqlcmd` job (see below) that
   #  waits for the server to accept connections first.
+  #
+  #  PROFILE "x64": mcr.microsoft.com/mssql/server:2022-latest is published
+  #  for linux/amd64 ONLY - the tag has no arm64 variant at all. On a
+  #  Raspberry Pi (or any arm64 host) pulling it either fails outright or
+  #  drags in a 600 MB amd64 image that then has to run under emulation.
+  #  Putting the service behind a profile means `docker compose up` simply
+  #  leaves it out on arm64 instead of failing the whole stack.
+  #
+  #  On x64 the profile is enabled explicitly:
+  #      docker compose -f compose/polystudio-lab.yml --profile x64 up -d
+  #  Poly Studio shows the command that matches the machine it runs on.
   # ---------------------------------------------------------------------------
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: poly-lab-sqlserver
+    profiles: ["x64"]
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "PolyDemo123!"
@@ -187,6 +219,7 @@ services:
   sqlserver-init:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: poly-lab-sqlserver-init
+    profiles: ["x64"]
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -206,6 +239,13 @@ services:
         # interpolated on the host - the shell inside the container sees '$'.
         SQLCMD=/opt/mssql-tools18/bin/sqlcmd
         if [ ! -x "$$SQLCMD" ]; then SQLCMD=/opt/mssql-tools/bin/sqlcmd; fi
+        EXISTS=$$("$$SQLCMD" -S sqlserver -U sa -P "PolyDemo123!" -C -h -1 -W -Q "SET NOCOUNT ON; IF DB_ID('Chinook') IS NOT NULL SELECT 1" 2>/dev/null || true)
+        case "$$EXISTS" in
+          *1*)
+            echo "[init] Chinook database already exists in SQL Server, skipping seed."
+            exit 0
+            ;;
+        esac
         echo "[init] loading Chinook into SQL Server..."
         # -b makes sqlcmd exit non-zero on error so a failed load is visible.
         "$$SQLCMD" -S sqlserver -U sa -P "PolyDemo123!" -C -b -i /data/Chinook_SqlServer.sql

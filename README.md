@@ -56,10 +56,14 @@ wiring itself.
 ## Quick start
 
 ```bash
-git clone https://github.com/VAapps/polystudio-samples.git
+git clone https://github.com/anandnandagiri/polystudio-samples.git
 cd polystudio-samples
 
-# 1. Start the lab (Postgres x2, MySQL, MariaDB, SQL Server + SSH sidecar)
+# 1. Start the lab (Postgres x2, MySQL, MariaDB + SSH sidecar)
+#    On x64 (Intel/AMD) add the SQL Server profile:
+docker compose -f compose/polystudio-lab.yml --profile x64 up -d
+
+#    On arm64 (Raspberry Pi, Apple Silicon) leave the profile off:
 docker compose -f compose/polystudio-lab.yml up -d
 ```
 
@@ -70,12 +74,47 @@ docker compose -f compose/polystudio-lab.yml up -d
 5. Open the Connectors page - the lab is wired up. Try **Query Lab** for the
    pre-built "Evaluation Lab" dashboard.
 
-The first run takes a few minutes while the database images pull and the
-sample data loads. Watch progress with:
+Poly Studio shows you the exact command for the machine it runs on, with the
+right profile already included.
+
+### Why the `--profile x64` difference
+
+`mcr.microsoft.com/mssql/server:2022-latest` is published for **linux/amd64
+only** - the tag has no arm64 variant at all. On a Raspberry Pi, pulling it
+either fails or drags in a 600 MB amd64 image that then has to run under
+emulation. The SQL Server services therefore sit behind a Compose profile, so
+`docker compose up` simply leaves them out on arm64 instead of failing the
+whole stack. Poly Studio skips the SQL Server **connector** on non-x64
+machines on its own, so both layers agree.
+
+### The first start takes a few minutes
+
+The sample data is loaded by the containers themselves, and the Sakila
+datasets are big (about 160,000 rows for PostgreSQL, 600,000 for MySQL and
+MariaDB). While a container is loading them it stays in `health: starting` -
+that is the honest state, because the health check tests the TCP port that
+Poly Studio actually reaches through the tunnel.
 
 ```bash
-docker compose -f compose/polystudio-lab.yml logs -f
+docker compose -f compose/polystudio-lab.yml ps          # watch it become healthy
+docker compose -f compose/polystudio-lab.yml logs -f      # or follow the loading
 ```
+
+If a connector fails with *"the database closed the connection"*, the usual
+cause is that the container is still seeding. Wait for it to report healthy
+and press **Test** again.
+
+### Running less of the lab on a small machine
+
+Four databases at once is a lot for a 4-8 GB Raspberry Pi. Start only what
+you need by naming the services you want:
+
+```bash
+docker compose -f compose/polystudio-lab.yml up -d lab-ssh postgres
+```
+
+The containers are tuned down for small machines already (64 MB shared
+buffers, 64 MB InnoDB buffer pool, 50 connections per database).
 
 When you are done:
 
@@ -90,12 +129,32 @@ docker compose -f compose/polystudio-lab.yml down -v
 - Creates the SSH tunnel + connectors and encrypts the passwords **the app's
   own way** (plaintext never touches disk).
 - Creates the "Evaluation Lab" Query Lab page and cards.
+- **Copies the pack's files onto the machine that runs Poly Studio** - the
+  seed scripts, the compose stack and the sample database - into
+  `<app data>/packs/<pack>/`. The layout is preserved (`packs/...` and
+  `compose/...`), so the folder is ready to run as a lab on its own. The
+  files are shared by every user of the app.
 - **Re-running is safe**: lab rows with the same names are replaced, never
-  duplicated.
+  duplicated, and a file whose checksum has not changed is left untouched.
+  That is how you update the lab data: pull the new repo, import again.
+- The app **never runs `docker` for you** - it shows you the exact command to
+  start the lab from the folder it just filled in.
 - Your **license limits apply** - on a Free license the extra connectors stay
   locked until you upgrade, exactly as if you had created them by hand.
 - On ARM64 machines (Raspberry Pi, Apple Silicon) the SQL Server connector and
   its card are skipped automatically - that image has no `linux/arm64` build.
+  The start command Poly Studio shows you matches: the SQL Server Compose
+  profile is left off on arm64 and enabled on x64, so the stack never tries
+  to pull a 600 MB image that cannot run there.
+
+### Importing from a URL instead of a folder
+
+The manifest can also live on GitHub. Open **Connectors -> Setup Packs ->
+Import a pack**, paste the address of a `lab-manifest.json` (a `raw.githubusercontent.com`
+link works), and the app fetches it. Relative file paths in the manifest are
+resolved against the manifest's own folder, so the same manifest works from a
+clone and from a URL. Remote files must declare their SHA-256 - the app
+verifies it before writing anything.
 
 ---
 

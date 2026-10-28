@@ -19,10 +19,34 @@
     { "label": "Lab SQL Server (Chinook)",     "kind": "sqlserver", "host": "sqlserver",        "port": 1433, "database": "Chinook", "username": "sa",   "password": "PolyDemo123!",  "allowWrites": true, "x64Only": true }
   ],
 
-  "sqlitePack": {
-    "label": "Sample SQLite (Chinook)",
-    "source": "packs/chinook-sqlite/Chinook_Sqlite.sqlite"
-  },
+  "assets": [
+    { "label": "Lab compose stack",        "kind": "compose", "path": "compose/polystudio-lab.yml",
+      "profiles": { "x64": "x64" },
+      "sha256": "4b30f5f0cb3fc4b3cc89af3bc93745979446aca44877c54a4821dbf449a0367a" },
+
+    { "label": "Chinook (PostgreSQL)",     "kind": "sql",     "path": "packs/chinook-postgres/Chinook_PostgreSql.sql",
+      "sha256": "2e66297fd508c256ab49a4161fb122f9dd9bb598a836d492502ab67e70b8a3ea" },
+    { "label": "Chinook (MySQL)",          "kind": "sql",     "path": "packs/chinook-mysql/Chinook_MySql.sql",
+      "sha256": "b0ac741b675d11c55ef3621407dce4c530761a21872746c19f3109a6880eb09c" },
+    { "label": "Chinook (SQL Server)",     "kind": "sql",     "path": "packs/chinook-sqlserver/Chinook_SqlServer.sql",
+      "sha256": "95cd5e1a82e0f830b5ee493383d06c1c4c69d11b54d04b69c56f0e8db2072b31" },
+
+    { "label": "Sakila roles (PostgreSQL)", "kind": "sql",    "path": "packs/sakila-postgres/00-roles.sql",
+      "sha256": "7feb1b6a36c7c5847d73d273ac270d51067df29b7e6fea337aba9b3a1ed0f9eb" },
+    { "label": "Sakila schema (PostgreSQL)", "kind": "sql",    "path": "packs/sakila-postgres/1-postgres-sakila-schema.sql",
+      "sha256": "284d8a7b4379b20d59fddf68c2b817a79e140ee81d738cbe928d4dd0844eddf9" },
+    { "label": "Sakila data (PostgreSQL)", "kind": "sql",     "path": "packs/sakila-postgres/2-postgres-sakila-insert-data.sql",
+      "sha256": "64f7840963110520af512b91cfa36195ebd65fc28f33623380114a372c8a216b" },
+    { "label": "Sakila user (PostgreSQL)", "kind": "sql",     "path": "packs/sakila-postgres/3-postgres-sakila-user.sql",
+      "sha256": "c734478cb5157db07a46dcad05fdc564c614ccdcc2b34df73236594db4666ab9" },
+    { "label": "Sakila schema (MySQL)",    "kind": "sql",     "path": "packs/sakila-mysql/1-sakila-schema.sql",
+      "sha256": "e8585136693e3c677b96740ff6ffabdc3197e4e0dce88b7debb86729c3f03b2a" },
+    { "label": "Sakila data (MySQL)",      "kind": "sql",     "path": "packs/sakila-mysql/2-sakila-data.sql",
+      "sha256": "a86e8a5539b56a0fa8bca3d942d3964032f6c2319bd98e9be02bb1a43251eef7" },
+
+    { "label": "Sample SQLite (Chinook)",  "kind": "sqlite",  "path": "packs/chinook-sqlite/Chinook_Sqlite.sqlite",
+      "role": "sqlite", "sha256": "7651ba378ac2fcd0dfc3c66fb101f7a7eed3ba39a612ec642b96e20702061f15" }
+  ],
 
   "queryLab": {
     "page": {

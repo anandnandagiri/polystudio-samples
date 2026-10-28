@@ -3,10 +3,10 @@
   "name": "Poly Studio Evaluation Lab (SQLite only)",
   "requiresDocker": false,
 
-  "sqlitePack": {
-    "label": "Sample SQLite (Chinook)",
-    "source": "packs/chinook-sqlite/Chinook_Sqlite.sqlite"
-  },
+  "assets": [
+    { "label": "Sample SQLite (Chinook)", "kind": "sqlite", "path": "packs/chinook-sqlite/Chinook_Sqlite.sqlite",
+      "role": "sqlite", "sha256": "7651ba378ac2fcd0dfc3c66fb101f7a7eed3ba39a612ec642b96e20702061f15" }
+  ],
 
   "queryLab": {
     "page": {
