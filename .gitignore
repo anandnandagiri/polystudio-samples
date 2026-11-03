@@ -4,3 +4,4 @@ Thumbs.db
 
 # Local scratch
 *.log
+!change.log

@@ -156,6 +156,18 @@ resolved against the manifest's own folder, so the same manifest works from a
 clone and from a URL. Remote files must declare their SHA-256 - the app
 verifies it before writing anything.
 
+Copy and paste either of the following raw GitHub URLs into Poly Studio:
+
+- **Full Evaluation Lab (Docker):**
+  ```text
+  https://raw.githubusercontent.com/anandnandagiri/polystudio-samples/main/lab-manifest.json
+  ```
+
+- **SQLite-only Lab (No Docker):**
+  ```text
+  https://raw.githubusercontent.com/anandnandagiri/polystudio-samples/main/lab-manifest.sqlite.json
+  ```
+
 ---
 
 ## No Docker? Import the SQLite-only pack
