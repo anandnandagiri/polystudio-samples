@@ -46,7 +46,7 @@ services:
       - -c
       - |
         set -e
-        apk add --no-cache openssh >/dev/null
+        apk add --no-cache --upgrade openssh >/dev/null
         ssh-keygen -A >/dev/null
         # CRITICAL: Alpine's openssh package ships "AllowTcpForwarding no" in
         # /etc/ssh/sshd_config. PolyStudio's SSH tunnel is a TCP port

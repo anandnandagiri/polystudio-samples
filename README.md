@@ -9,7 +9,7 @@ home.
 
 > **One command and one click.** `docker compose up` starts the lab, then
 > Poly Studio's **Import Lab Pack** button wires it in completely - SSH tunnel,
-> 5 database connectors and a pre-seeded Query Lab dashboard with 6 live
+> 5 database connectors and 3 pre-seeded Query Lab dashboards with 14 live
 > charts. Poly Studio reads the `lab-manifest.json` in this folder and configures
 > itself; no scripts, no tooling.
 
@@ -21,7 +21,7 @@ home.
 |---|---|
 | **5 database connectors** | PostgreSQL (x2), MySQL, MariaDB, SQL Server - all reached through one SSH tunnel |
 | **1 SSH tunnel** | `Lab SSH (poly-lab-ssh)` - a real `sshd` on a container, exactly like a remote PROD host |
-| **1 Query Lab page** | "Evaluation Lab" - 6 chart cards that run against the live data |
+| **3 Query Lab pages** | "Sakila - Film Rental Analytics", "Chinook - Music & Media Store", "Cross-Engine Benchmarks & Inventory" - 14 chart cards across engines |
 | **Docker Studio** | Lists the lab's real containers (the sidecar has the Docker socket mounted) |
 
 Every database connection travels over the SSH tunnel. The databases are
@@ -72,7 +72,7 @@ docker compose -f compose/polystudio-lab.yml up -d
 4. Review the preview (it verifies the lab is reachable and your license
    allows the count) and press **Allow & import**.
 5. Open the Connectors page - the lab is wired up. Try **Query Lab** for the
-   pre-built "Evaluation Lab" dashboard.
+   pre-built analytical dashboards ("Sakila - Film Rental Analytics", "Chinook - Music & Media Store", "Cross-Engine Benchmarks & Inventory").
 
 Poly Studio shows you the exact command for the machine it runs on, with the
 right profile already included.
@@ -128,7 +128,7 @@ docker compose -f compose/polystudio-lab.yml down -v
   nothing is written until you confirm.
 - Creates the SSH tunnel + connectors and encrypts the passwords **the app's
   own way** (plaintext never touches disk).
-- Creates the "Evaluation Lab" Query Lab page and cards.
+- Creates the 3 Query Lab analytical dashboard pages and 14 live charts.
 - **Copies the pack's files onto the machine that runs Poly Studio** - the
   seed scripts, the compose stack and the sample database - into
   `<app data>/packs/<pack>/`. The layout is preserved (`packs/...` and

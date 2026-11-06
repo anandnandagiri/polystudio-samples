@@ -1,2 +1,14 @@
-[2026-11-03 11:54:00 IST] Add copyable raw GitHub URLs for lab-manifest.json and lab-manifest.sqlite.json in README.md
+## [2026-11-07 00:20:00 IST]
+- **Description:** **Fix `poly-lab-ssh` Alpine Upgrade Conflict and Update Compose Checksum (`compose/polystudio-lab.yml`, `lab-manifest.json`)**:
+  - **Upgrade Alpine OpenSSH package (`compose/polystudio-lab.yml`):** Added `--upgrade` flag (`apk add --no-cache --upgrade openssh >/dev/null`) to resolve package breaks with `openssh-client-default` during container initialization.
+  - **Synchronized manifest SHA-256 checksum (`lab-manifest.json`):** Updated the SHA-256 hash for `compose/polystudio-lab.yml` to `5d95e54f825f2fb3b3aa3561f599883ad467f826df1ffd8477d9f6704dae72ab` so pack import and update integrity checks succeed cleanly.
+- **Reference ID:** LAB-MANIFEST-COMPOSE-HASH-SYNC
 
+## [2026-11-03 11:58:45 IST]
+- **Description:** **Add Multi-Page Analytical Dashboards in Evaluation Lab Manifest (`lab-manifest.json`, `README.md`)**:
+  - **3 Dedicated Query Lab Pages (`lab-manifest.json`):** Expanded `queryLab` configuration from a single generic page into 3 distinct business-domain pages containing 14 live analytical charts:
+    - `Sakila - Film Rental Analytics` (5 cards): Monthly revenue trends (MySQL, line chart), top 10 rentals (MariaDB, bar chart), customer distribution by country (PostgreSQL, bar chart), film categories (PostgreSQL, doughnut chart), and top 10 customers by spending (MySQL, bar chart).
+    - `Chinook - Music & Media Store` (5 cards): Top 10 artists by track count (PostgreSQL, bar chart), tracks by genre (PostgreSQL, doughnut chart), sales by billing country (PostgreSQL, bar chart), top 10 longest tracks (PostgreSQL, bar chart), and albums per artist (SQL Server, bar chart).
+    - `Cross-Engine Benchmarks & Inventory` (4 cards): Store inventory distribution (MariaDB, bar chart), film ratings breakdown (MySQL, pie chart), media types catalog (PostgreSQL, pie chart), and invoice distribution by customer (SQL Server, bar chart).
+  - **Documentation updates (`README.md`):** Updated summary tables, setup walkthrough, and feature descriptions to reflect the 3 Query Lab dashboards and 14 chart widgets.
+- **Reference ID:** LAB-MANIFEST-MULTIPAGE-QUERYLAB
