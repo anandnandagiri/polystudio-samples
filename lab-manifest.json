@@ -70,7 +70,7 @@
       "profiles": {
         "x64": "x64"
       },
-      "sha256": "5d95e54f825f2fb3b3aa3561f599883ad467f826df1ffd8477d9f6704dae72ab"
+      "sha256": "69891ca0fdbb4341fdfe9054e8896ba26d7fab5d81129308c74789902557daaf"
     },
     {
       "label": "Chinook (PostgreSQL)",

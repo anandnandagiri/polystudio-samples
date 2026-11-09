@@ -57,11 +57,12 @@ services:
           'PermitRootLogin yes' \
           'PasswordAuthentication yes' \
           'AllowTcpForwarding yes' \
+          'Subsystem sftp internal-sftp' \
           'GatewayPorts no' \
           'X11Forwarding no' \
           > /etc/ssh/sshd_config
         echo 'root:PolyDemo123!' | chpasswd
-        echo "lab-ssh ready (root / PolyDemo123!) - TCP forwarding enabled"
+        echo "lab-ssh ready (root / PolyDemo123!) - TCP forwarding + SFTP enabled"
         exec /usr/sbin/sshd -D
 
   # ---------------------------------------------------------------------------
